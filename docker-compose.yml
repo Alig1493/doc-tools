@@ -1,0 +1,23 @@
+services:
+
+  web_dev:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      args:
+        some_variable_name: a_value
+    command: fastapi dev --host 0.0.0.0 main.py
+    volumes:
+      - ./app:/app
+    ports:
+      - 8000:8000
+
+  testrunner:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      args:
+        REQUIREMENTS_PATH: requirements_test.txt
+    volumes:
+      - .:/app
+    command: pytest -svvx .

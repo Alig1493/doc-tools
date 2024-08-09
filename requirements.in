@@ -1,0 +1,6 @@
+fastapi[standard]
+httpx
+pre-commit
+python-multipart
+pypdf
+reportlab
