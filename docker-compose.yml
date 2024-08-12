@@ -1,18 +1,21 @@
 services:
 
-  web_dev:
+  web:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
       args:
         some_variable_name: a_value
-    command: fastapi dev --host 0.0.0.0 main.py
+    command: fastapi dev --host 0.0.0.0 --port 8000 main.py
+    # Run below command for production
+    # command: fastapi run --host 0.0.0.0 --port 8000 main.py
     volumes:
-      - ./app:/app
+      - ./src:/app
     ports:
       - 8000:8000
 
   testrunner:
+    image: testrunner
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -21,3 +24,31 @@ services:
     volumes:
       - .:/app
     command: pytest -svvx .
+
+
+  locust_master:
+    image: locust_testrunner
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.locust
+      args:
+        REQUIREMENTS_PATH: requirements_performance.txt
+    ports:
+     - "8089:8089"
+     - "5557:5557"
+    volumes:
+      - ./:/mnt/locust
+    command: locust -f /mnt/locust/tests/locustfile.py --master -H http://web:8000
+
+  locust_worker:
+    image: locust_testrunner
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.locust
+      args:
+        REQUIREMENTS_PATH: requirements_performance.txt
+    volumes:
+      - ./:/mnt/locust
+    depends_on:
+      - locust_master
+    command: locust -f /mnt/locust/tests/locustfile.py --worker --master-host locust_master
