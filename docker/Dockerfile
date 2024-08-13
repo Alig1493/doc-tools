@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-ARG REQUIREMENTS_PATH=requirements.txt
+ARG REQUIREMENTS_PATH=requirements.txt # set default requirements path
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

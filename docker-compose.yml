@@ -13,6 +13,12 @@ services:
       - ./src:/app
     ports:
       - 8000:8000
+    healthcheck:
+      test: ["CMD-SHELL", "./docker/run/fastapi_helthcheck.sh"]
+      interval: 2s
+      start_period: 5s
+      timeout: 5s
+      retries: 5
 
   testrunner:
     image: testrunner
@@ -39,6 +45,10 @@ services:
     volumes:
       - ./:/mnt/locust
     command: locust -f /mnt/locust/tests/locustfile.py --master -H http://web:8000
+    depends_on:
+      web:
+        condition: service_healthy
+        restart: true
 
   locust_worker:
     image: locust_testrunner
