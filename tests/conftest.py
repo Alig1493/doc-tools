@@ -1,4 +1,7 @@
+from io import BytesIO
 import uuid
+
+from PIL import Image
 import pytest
 from fastapi.testclient import TestClient
 from reportlab.pdfgen.canvas import Canvas
@@ -27,5 +30,14 @@ def sample_pdf_files(request, tmp_path):
         # one inch from the left and one inch from the bottom of the page.
         canvas.drawString(72, 72, param)
         canvas.save()
-        file_paths.append(pdf_posix)
+        file_paths.append(pdf_posix.as_posix())
     return file_paths
+
+
+@pytest.fixture
+def sample_pdf_image_file(tmp_path):
+    image_path = "sample.jpg"
+    img = Image.open(image_path)
+    img_as_pdf = BytesIO()
+    img.save(img_as_pdf, "pdf")
+    return img_as_pdf

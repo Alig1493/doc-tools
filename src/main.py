@@ -1,36 +1,14 @@
 import asyncio
-from enum import Enum
 import io
 from fastapi import FastAPI, Response, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
-from pypdf import PdfReader, PdfWriter
-from .exceptions import IncorrectExtension
+from pypdf import PdfWriter
+from .utils import check_and_append_pdfs, image_quality_and_metadata_compression
+from .configs import Extensions
 
 
 app = FastAPI()
-
-
-class Extensions(Enum):
-    PDF = "application/pdf"
-
-    def __str__(self):
-        return self.value
-
-
-async def check_and_append_pdfs(
-    index: int, pdf_merger: PdfWriter, upload_file: UploadFile
-):
-    if not upload_file.content_type == Extensions.PDF.value:
-        raise IncorrectExtension(
-            details={
-                index: {
-                    "filename": upload_file.filename,
-                    "message": IncorrectExtension.message,
-                }
-            },
-        )
-    pdf_merger.append(upload_file.file)
 
 
 @app.exception_handler(ExceptionGroup)
@@ -68,20 +46,9 @@ async def merge_pdfs(files: list[UploadFile]):
     )
 
 
-@app.post("/compress")
+@app.post("/compress/")
 async def compress_pdf(file: UploadFile):
-    reader = PdfReader("big-old-file.pdf")
-    writer = PdfWriter()
-
-    for page in reader.pages:
-        writer.add_page(page)
-        # reduce image quality if any image exists
-        for img in page.images:
-            img.replace(img.image, quality=50)
-
-    if reader.metadata is not None:
-        writer.add_metadata(reader.metadata)
-
+    writer = await image_quality_and_metadata_compression(file.file)
     with io.BytesIO() as fp:
         writer.write(fp)
         compressed_file_buffer = fp.getvalue()

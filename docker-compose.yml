@@ -4,8 +4,6 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-      args:
-        some_variable_name: a_value
     command: fastapi dev --host 0.0.0.0 --port 8000 main.py
     # Run below command for production
     # command: fastapi run --host 0.0.0.0 --port 8000 main.py
@@ -30,7 +28,6 @@ services:
     volumes:
       - .:/app
     command: pytest -svvx .
-
 
   locust_master:
     image: locust_testrunner

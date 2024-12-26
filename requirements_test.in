@@ -2,3 +2,5 @@
 ipdb
 ipython
 pytest
+pytest-asyncio
+Pillow

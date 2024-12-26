@@ -14,16 +14,15 @@ class TestFileMerge:
         ],
         indirect=True,
     )
-    def test_file_upload(self, sample_pdf_files, test_client):
+    def test_file_merge(self, sample_pdf_files, test_client):
         expected_output = [
-            PdfReader(pdf_file.as_posix()).pages[0].extract_text()
-            for pdf_file in sample_pdf_files
+            PdfReader(pdf_file).pages[0].extract_text() for pdf_file in sample_pdf_files
         ]
         expected_pages_length = len(sample_pdf_files)
 
         with ExitStack() as stack:
             files = [
-                ("files", stack.enter_context(open(fname.as_posix(), "rb")))
+                ("files", stack.enter_context(open(fname, "rb")))
                 for fname in sample_pdf_files
             ]
             response = test_client.post("/merge", files=files)
@@ -36,6 +35,19 @@ class TestFileMerge:
         pdf_reader = PdfReader(bytes_stream)
         assert len(pdf_reader.pages) == expected_pages_length
         assert [page.extract_text() for page in pdf_reader.pages] == expected_output
+
+    def test_file_compression(self, sample_pdf_image_file, test_client, tmp_path):
+        initial_size = sample_pdf_image_file.getbuffer().nbytes
+        response = test_client.post("/compress", files={"file": sample_pdf_image_file})
+
+        assert response.status_code == 200
+        assert (
+            response.headers["content-disposition"]
+            == 'inline; filename="compressed.pdf"'
+        )
+        assert response.headers["content-type"] == "application/pdf"
+        # ensuring greater than equals to 15% compression
+        assert ((initial_size - len(response.content)) / initial_size) * 100 >= 15
 
     def test_non_pdf_files(self, test_client):
         filename = "sample.txt"
